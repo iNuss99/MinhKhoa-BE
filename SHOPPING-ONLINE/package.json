@@ -1,0 +1,11 @@
+{
+  "name": "shopping-online",
+  "version": "1.0.0",
+  "description": "Root configuration to run MERN Shopping Online services simultaneously",
+  "scripts": {
+    "start": "concurrently -n \"SERVER,ADMIN,CUSTOMER\" -c \"blue,green,magenta\" \"npm --prefix server start\" \"npm --prefix client-admin start\" \"npm --prefix client-customer start\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

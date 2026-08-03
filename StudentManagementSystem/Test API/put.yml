@@ -1,0 +1,26 @@
+info:
+  name: put
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: http://localhost:3000/api/v1/students/6a55ca6493d172c6d60e4481
+  body:
+    type: json
+    data: |+
+      {
+        "studentCode":"585855",
+        "fullName":"Hoang Khuong Duy",
+        "email":"duy.hoang030199@gmail.com",
+        "dateOfBirth":"1999-01-03",
+        "className":"FE"  
+      }
+
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

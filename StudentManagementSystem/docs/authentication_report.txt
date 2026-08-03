@@ -1,0 +1,89 @@
+================================================================================
+AUTHENTICATION ARCHITECTURE & IMPLEMENTATION REPORT
+Student Management System API
+================================================================================
+
+Hệ thống Authentication đã được thiết kế và triển khai hoàn chỉnh theo mô hình
+MVC + Service Pattern sử dụng Node.js, Express, JWT, và Bcrypt.
+
+--------------------------------------------------------------------------------
+CÁC THÀNH PHẦN ĐÃ TẠO & CẤP NHẬT
+--------------------------------------------------------------------------------
+
+1. User Model (src/models/user.model.js)
+   - Định nghĩa các trường thông tin: fullName, email (unique), password (ẩn khi query với select: false), role (admin, teacher, student), isActive.
+   - Bcrypt pre-save hook: Tự động hash mật khẩu với bcryptjs trước khi lưu vào cơ sở dữ liệu.
+   - Instance method isPasswordMatch: So sánh plain password nhập từ client với mật khẩu đã băm trong DB.
+
+2. Authentication Validation (src/validations/auth.validation.js)
+   - registerSchema: Validate dữ liệu đăng ký (fullName, email, password tối thiểu 6 ký tự, role).
+   - loginSchema: Validate dữ liệu đăng nhập (email, password).
+
+3. Authentication Service (src/services/auth.service.js)
+   - generateToken(userId, role): Tạo JWT token hết hạn sau 1d (cấu hình qua .env).
+   - registerUser(userBody): Kiểm tra email tồn tại -> Tạo User mới -> Tạo JWT token.
+   - loginUser(email, password): Kiểm tra tài khoản -> Xác thực mật khẩu qua isPasswordMatch() -> Tạo JWT token.
+
+4. Authentication Controller (src/controllers/auth.controller.js)
+   - Tiếp nhận request, gọi service tương ứng và trả về chuẩn JSON response (success, message, data).
+
+5. JWT & Role Middlewares (src/middlewares/auth.middleware.js)
+   - authenticateJWT: Kiểm tra header Authorization: Bearer <token>, giải mã token, xác thực user trong DB và gán vào req.user.
+   - authorize(...roles): Middleware phân quyền dựa trên req.user.role. Nếu người dùng không nằm trong danh sách vai trò cho phép, trả về 403 Forbidden.
+
+6. Routes & Route Protection (src/routes/auth.route.js, src/routes/student.route.js, src/routes/index.js)
+   - Khai báo các API Đăng ký (/api/v1/auth/register), Đăng nhập (/api/v1/auth/login), và Thông tin cá nhân (/api/v1/auth/me).
+   - Áp dụng authenticateJWT và authorize('admin', 'teacher') bảo vệ tài nguyên sinh viên trong /api/v1/students.
+
+--------------------------------------------------------------------------------
+LUỒNG AUTHENTICATION (AUTHENTICATION FLOW EXPLANATION)
+--------------------------------------------------------------------------------
+
++--------+                +----------------+              +----------------+              +----------------+              +------------------+
+| Client |                | Express Router |              | Auth Middleware|              | Auth Controller|              | Auth Service/DB  |
++--------+                +----------------+              +----------------+              +----------------+              +------------------+
+    |                             |                               |                               |                                |
+    |--- 1. POST /auth/login ---->|                               |                               |                                |
+    |                             |-------------------------------------------------------------->|                                |
+    |                             |                                                               |-- 2. loginUser(email, pass) ->|
+    |                             |                                                               |                                |-- Query User & check bcrypt
+    |                             |                                                               |                                |-- Sign JWT Token
+    |                             |<--------------------------------------------------------------|<-- 3. Return user & token -----|
+    |<-- 4. 200 OK (User, Token) -|                               |                               |                                |
+    |                             |                               |                               |                                |
+    |--- 5. GET /students (JWT) ->|                               |                               |                                |
+    |                             |--- 6. authenticateJWT ------->|                               |                                |
+    |                             |                               |-- Verify Token & attach user  |                                |
+    |                             |                               |-- 7. authorize('admin',...)   |                                |
+    |                             |                               |-- Check req.user.role ok      |                                |
+    |                             |<------------------------------|                               |                                |
+    |                             |-------------------------------------------------------------->|                                |
+    |<-- 8. 200 OK (Data) --------|<--------------------------------------------------------------|                                |
+
+
+CHI TIẾT CÁC BƯỚC THỰC THI:
+
+1. Đăng ký (Register):
+   - Client gửi POST /api/v1/auth/register chứa thông tin người dùng.
+   - validate(registerSchema) kiểm tra định dạng dữ liệu (email hợp lệ, password >= 6 ký tự).
+   - authService.registerUser kiểm tra email trùng lặp.
+   - Mongoose pre('save') tự động băm (hash) mật khẩu trước khi lưu vào MongoDB qua bcrypt.hash().
+   - Trả về thông tin người dùng (đã loại bỏ field password) cùng với Access Token JWT.
+
+2. Đăng nhập (Login):
+   - Client gửi POST /api/v1/auth/login.
+   - authService.loginUser tìm User theo email kèm trường +password.
+   - Gọi phương thức user.isPasswordMatch(password) sử dụng bcrypt.compare() để xác minh tính đúng đắn của mật khẩu.
+   - Khi mật khẩu đúng, server ký (sign) JWT Token chứa payload: { sub: user._id, role: user.role } với thời hạn hết hạn (JWT_EXPIRES_IN).
+
+3. Truy cập tài nguyên bảo vệ (Protected Resource Access):
+   - Client gửi kèm Header: Authorization: Bearer <JWT_TOKEN>.
+   - authenticateJWT:
+     - Kiểm tra sự tồn tại và định dạng của token.
+     - Giải mã token bằng jwt.verify(token, JWT_SECRET).
+     - Tìm kiếm thông tin user theo ID (sub) để đảm bảo tài khoản vẫn tồn tại và đang hoạt động (isActive === true).
+     - Đính kèm thông tin user thu được vào req.user.
+   - authorize('admin', 'teacher'):
+     - So sánh req.user.role với danh sách role cho phép.
+     - Nếu không phù hợp: Trả về 403 Forbidden.
+     - Nếu phù hợp: Chuyển tiếp điều khiển cho Controller xử lý và trả về dữ liệu.
