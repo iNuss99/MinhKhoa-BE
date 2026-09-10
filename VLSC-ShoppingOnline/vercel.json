@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "framework": null,
   "installCommand": "npm install && npm --prefix server install && npm --prefix client-admin install && npm --prefix client-customer install",
   "buildCommand": "CI=false npm run build",
   "outputDirectory": "client-customer/build",
