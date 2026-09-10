@@ -1,8 +1,14 @@
 {
   "version": 2,
-  "installCommand": "npm run install:all",
+  "installCommand": "npm install && npm --prefix server install && npm --prefix client-admin install && npm --prefix client-customer install",
   "buildCommand": "CI=false npm run build",
   "outputDirectory": "client-customer/build",
+  "functions": {
+    "api/index.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
