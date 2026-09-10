@@ -8,7 +8,7 @@ import Order from './OrderComponent';
 import Customer from './CustomerComponent';
 import UserManagement from './UserManagementComponent';
 import AuditLogComponent from './AuditLogComponent';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
 class Main extends Component {
