@@ -4,14 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "nodemon index.js || node index.js",
+    "dev": "nodemon index.js",
+    "seed": "node seed.js",
+    "seed:orders": "node seed_orders.js",
+    "import": "node import_resources.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "body-parser": "^1.20.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.3.1",

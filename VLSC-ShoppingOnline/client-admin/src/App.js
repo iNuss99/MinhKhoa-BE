@@ -10,11 +10,12 @@ class App extends Component {
     return (
       <MyProvider>
         <Login />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Main />
         </BrowserRouter>
       </MyProvider>
     );
   }
 }
+
 export default App;

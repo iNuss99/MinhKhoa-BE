@@ -4,7 +4,7 @@ import MyContext from '../contexts/MyContext';
 import ProductDetail from './ProductDetailComponent';
 
 class Product extends Component {
-  static contextType = MyContext; // using this.context to access global state
+  static contextType = MyContext;
   constructor(props) {
     super(props);
     this.state = {
@@ -14,73 +14,134 @@ class Product extends Component {
       itemSelected: null
     };
   }
+
   render() {
-    const prods = this.state.products.map((item) => {
+    const productsList = Array.isArray(this.state.products) ? this.state.products : [];
+    const prods = productsList.map((item) => {
+      const isSelected = this.state.itemSelected?._id === item._id;
       return (
-        <tr key={item._id} className="datatable" onClick={() => this.trItemClick(item)}>
-          <td>{item._id}</td>
-          <td>{item.name}</td>
-          <td>{item.price}</td>
-          <td>{new Date(item.cdate).toLocaleString()}</td>
-          <td>{item.category.name}</td>
-          <td><img src={"data:image/jpg;base64," + item.image} width="100px" height="100px" alt="" /></td>
+        <tr key={item._id} className={isSelected ? 'datatable selected' : 'datatable'} onClick={() => this.trItemClick(item)}>
+          <td><span className="code-id-tag">{item._id}</span></td>
+          <td>
+            <div className="d-flex align-items-center gap-3">
+              <img
+                src={item.images && item.images.length > 0 ? item.images[0] : (item.image && item.image.startsWith('http') ? item.image : "data:image/jpg;base64," + item.image)}
+                width="44"
+                height="44"
+                style={{ borderRadius: '8px', objectFit: 'contain', border: '1px solid var(--border)', background: '#f8fafc', padding: '2px' }}
+                alt={item.name}
+              />
+              <strong className="text-dark fs-6">{item.name}</strong>
+            </div>
+          </td>
+          <td style={{ color: 'var(--primary-hover)', fontWeight: '800', whiteSpace: 'nowrap' }}>
+            {item.price ? item.price.toLocaleString('vi-VN') + ' ₫' : '0 ₫'}
+          </td>
+          <td>
+            <span className="badge bg-light text-secondary border px-2 py-1 fw-semibold">
+              {item.category ? item.category.name : 'Chung'}
+            </span>
+          </td>
+          <td style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            {new Date(item.cdate).toLocaleDateString('vi-VN')}
+          </td>
         </tr>
       );
     });
+
     const pagination = Array.from({ length: this.state.noPages }, (_, index) => {
-      if ((index + 1) === this.state.curPage) {
-        return (<span key={index}>| <b>{index + 1}</b> |</span>);
-      } else {
-        return (<span key={index} className="link" onClick={() => this.lnkPageClick(index + 1)}>| {index + 1} |</span>);
-      }
+      const pageNum = index + 1;
+      const isActive = pageNum === this.state.curPage;
+      return (
+        <button
+          key={index}
+          className={isActive ? 'page-item active' : 'page-item'}
+          onClick={() => this.lnkPageClick(pageNum)}
+        >
+          {pageNum}
+        </button>
+      );
     });
+
     return (
-      <div>
-        <div className="float-left">
-          <h2 className="text-center">PRODUCT LIST</h2>
-          <table className="datatable" border="1">
-            <tbody>
-              <tr className="datatable">
-                <th>ID</th>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Creation date</th>
-                <th>Category</th>
-                <th>Image</th>
-              </tr>
-              {prods}
-              <tr>
-                <td colSpan="6">{pagination}</td>
-              </tr>
-            </tbody>
-          </table>
+      <div className="view-container">
+        <div className="content-card">
+          <div className="card-title">
+            <span><i className="bi bi-box-seam-fill text-success me-2"></i> Kho sản phẩm hệ thống</span>
+            <span className="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill fw-bold">
+              Trang {this.state.curPage} / {Math.max(1, this.state.noPages)}
+            </span>
+          </div>
+
+          <div className="table-responsive">
+            <table className="datatable">
+              <thead>
+                <tr>
+                  <th>Mã sản phẩm</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Đơn giá</th>
+                  <th>Danh mục</th>
+                  <th>Ngày tạo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prods.length > 0 ? prods : (
+                  <tr>
+                    <td colSpan="5" className="text-center py-4 text-muted fw-semibold">
+                      <i className="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
+                      Chưa có sản phẩm nào trong kho. Hãy thêm sản phẩm mới!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {this.state.noPages > 1 && (
+            <div className="pagination">
+              {pagination}
+            </div>
+          )}
         </div>
-        <div className="inline" />
+
         <ProductDetail item={this.state.itemSelected} curPage={this.state.curPage} updateProducts={this.updateProducts} />
-        <div className="float-clear" />
       </div>
     );
   }
+  
   componentDidMount() {
     this.apiGetProducts(this.state.curPage);
   }
-  updateProducts = (products, noPages) => { // arrow-function
-    this.setState({ products: products, noPages: noPages });
-  }
+  
   // event-handlers
   lnkPageClick(index) {
     this.apiGetProducts(index);
   }
+  
   trItemClick(item) {
     this.setState({ itemSelected: item });
   }
+  
+  updateProducts = (products, noPages) => {
+    this.setState({
+      products: Array.isArray(products) ? products : [],
+      noPages: noPages || 0,
+      itemSelected: null
+    });
+  }
+  
   // apis
   apiGetProducts(page) {
     const config = { headers: { 'x-access-token': this.context.token } };
     axios.get('/api/admin/products?page=' + page, config).then((res) => {
       const result = res.data;
-      this.setState({ products: result.products, noPages: result.noPages, curPage: result.curPage });
+      if (result && Array.isArray(result.products)) {
+        this.setState({ products: result.products, noPages: result.noPages || 0, curPage: result.curPage || 1 });
+      }
+    }).catch((err) => {
+      console.error('Error fetching products:', err.message);
     });
   }
 }
+
 export default Product;
