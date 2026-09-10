@@ -2,6 +2,11 @@
   "name": "vlsc-shopping-online",
   "version": "1.0.0",
   "description": "Root configuration to run MERN Shopping Online services simultaneously",
+  "workspaces": [
+    "server",
+    "client-admin",
+    "client-customer"
+  ],
   "scripts": {
     "start": "concurrently -n \"SERVER,ADMIN,CUSTOMER\" -c \"blue,green,magenta\" \"npm --prefix server start\" \"npm --prefix client-admin start\" \"npm --prefix client-customer start\"",
     "build": "npm --prefix client-admin run build && npm --prefix client-customer run build && node scripts/copy-admin.js",
