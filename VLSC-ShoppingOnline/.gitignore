@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment & Secrets
+.env
+.env.*
+*.env
+*.env.*
+*.pem
+*.key
+*.cert
+*.crt
+credentials*.json
+serviceAccountKey*.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Build directories
+build/
+dist/
+**/build/
+**/dist/
+
+# System / IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Documentation, PDFs, and Markdown files
+docs/
+**/docs/
+PDF/
+**/PDF/
+*.pdf
+**/*.pdf
+*.md
+**/*.md
